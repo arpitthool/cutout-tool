@@ -108,6 +108,13 @@ int main () {
                 When you imshow(mask), it looks black because pixel values are tiny (0–3), not 0/255.
                 
                 The solution is to use a binary foreground mask that keeps only FG or PR_FG, and scale it to 0/255 for display.
+
+                mask == GC_FGD creates a temporary binary mask where pixels that are definite foreground (1) become 255 (and everything else is 0), type CV_8UC1.
+
+                mask == GC_PR_FGD does the same for probable foreground (3).
+
+                The | (bitwise OR) combines them.
+                So the result is a single-channel image of type CV_8UC1 where foreground = 255, background = 0.
                 */
 
                 // Keep only definite FG (1) or probable FG (3)
