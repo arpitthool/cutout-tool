@@ -12,6 +12,6 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Add executable for OpenCV test
-add_executable(main main.cpp)
+add_executable(main src/main.cpp)
 target_link_libraries(main ${OpenCV_LIBS})
 
