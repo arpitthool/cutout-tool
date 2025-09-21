@@ -9,7 +9,7 @@ using namespace std;
 
 bool selectRectangleMode = false, firstClickDone = false;
 Point firstClick, secondClick;      // Variables to store the coordinates of the two clicks
-Mat image;  
+Mat ogImage, image;  
 Rect selectedRect;                  // Rectangle selected by user
 Mat bgModel, fgModel, mask;         // Variables for GrabCut segmentation
 
@@ -55,8 +55,9 @@ void mouseCallback(int event, int x, int y, int flags, void* userdata) {
 int main () {
 
     string imagePath = "../images/objects.png";
-    image = imread(imagePath);
-
+    ogImage = imread(imagePath);
+    image = ogImage.clone();
+    
     if (image.empty()) {
         cout << "Error: Could not load image from " << imagePath << endl;
         return -1;
@@ -80,6 +81,9 @@ int main () {
             // Check for rectangle selection mode
             if (!selectRectangleMode) {
 
+                // reset the image
+                image = ogImage.clone();
+
                 // Enter rectangle selection mode
                 selectRectangleMode = true;
 
@@ -97,6 +101,7 @@ int main () {
                 // Run GrabCut on the selected rectangle
                 mask = Mat(image.size(), CV_8UC1, GC_BGD);
                 
+                // crop the image and mask it
                 grabCut(image, mask, selectedRect, bgModel, fgModel, 5, GC_INIT_WITH_RECT);
                 
                 // refine the mask
