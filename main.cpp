@@ -47,14 +47,7 @@ void mouseCallback(int event, int x, int y, int flags, void* userdata) {
             rectangle(image, topLeft, bottomRight, Scalar(0, 255, 0), 2);
             
             cout << "Rectangle selected: Top-left (" << topLeft.x << ", " << topLeft.y 
-                 << "), Bottom-right (" << bottomRight.x << ", " << bottomRight.y << ")" << endl;
-            
-            // Run GrabCut on the selected rectangle
-            mask = Mat(image.size(), CV_8UC1, GC_BGD);
-            
-            grabCut(image, mask, selectedRect, bgModel, fgModel, 5, GC_INIT_WITH_RECT);
-            
-            cout << "GrabCut segmentation completed! Press 'g' to see the result." << endl;
+                 << "), Bottom-right (" << bottomRight.x << ", " << bottomRight.y << ")" << endl;            
         }
     }
 }
@@ -99,11 +92,41 @@ int main () {
             }
         } else if( key == 'g') {
             // Check if we have a valid rectangle and mask from GrabCut
-            if(selectedRect.width > 0 && selectedRect.height > 0 && !mask.empty()) {
+            if(selectedRect.width > 0 && selectedRect.height > 0) {
+
+                // Run GrabCut on the selected rectangle
+                mask = Mat(image.size(), CV_8UC1, GC_BGD);
+                
+                grabCut(image, mask, selectedRect, bgModel, fgModel, 5, GC_INIT_WITH_RECT);
+                
+                // refine the mask
+                /*
+                grabCut fills mask with labels 0..3 (GC_BGD=0, GC_FGD=1, GC_PR_BGD=2, GC_PR_FGD=3).
+
+                When you do image.copyTo(result, mask), any non-zero value is treated as “copy,” so the entire rectangle (values 1–3) gets copied → looks like a plain crop.
+
+                When you imshow(mask), it looks black because pixel values are tiny (0–3), not 0/255.
+                
+                The solution is to use a binary foreground mask that keeps only FG or PR_FG, and scale it to 0/255 for display.
+                */
+
+                // Keep only definite FG (1) or probable FG (3)
+                mask = (mask == GC_FGD) | (mask == GC_PR_FGD);
+
+                // apply guassian filter to smoothen the edges
+                /*
+                pure black/white pixels near borders become shades of gray (e.g. 50, 128, 200).
+
+                This is often used to feather or antialias the edge so the cutout blends more smoothly with new backgrounds.
+                */
+                GaussianBlur(mask, mask, cv::Size(3,3), 0);
+
+                // After blurring, you typically re-threshold if you need a hard mask again:
+                threshold(mask, mask, 128, 255, cv::THRESH_BINARY);
+                
+               
                 // Create a result image with only the foreground
                 Mat result;
-               
-                // create cutout
                 image.copyTo(result, mask);
                 
                 // Show the cutout result in a new window
