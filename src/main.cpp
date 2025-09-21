@@ -1,4 +1,4 @@
-#include<iostream>
+#include <iostream>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -10,11 +10,18 @@ using namespace std;
 bool selectRectangleMode = false, firstClickDone = false;
 Point firstClick, secondClick;      // Variables to store the coordinates of the two clicks
 Mat ogImage, image;  
+int sideW = 200;                    // side menu width
 Rect selectedRect;                  // Rectangle selected by user
 
 // Mouse callback function for rectangle selection - this function is called whenever the mouse is clicked
 // Where x and y are the coordinates of the mouse click and event is the type of event that occurred
 void mouseCallback(int event, int x, int y, int flags, void* userdata) {
+
+    // Ignore clicks in the side strip
+    if (x < sideW) return;
+
+    // Shift x to match original image coordinates
+    x -= sideW;
 
     // Check if the left mouse button was pressed down AND we're in rectangle selection mode
     if (event == EVENT_LBUTTONDOWN && selectRectangleMode) {
@@ -96,6 +103,34 @@ Mat createMask (Mat image, Rect selectedRect) {
     return mask;
 }
 
+// function to show the menu options
+void showOptions(Mat ui) {
+
+    double fontSize = 0.5;
+    int fontWidth = 1;
+    int x = 10, y = 40;
+
+    vector<string> options = {
+        "MENU",
+        "",
+        "'q' - quit",
+        "",
+        "'r' - make rectangle",
+        "(make two clicks",
+        "to signify the ",
+        "top left and the",
+        "bottom right corners)",
+        "",
+        "'g' - generate cutout"
+    };
+
+    for(size_t i = 0; i < options.size(); i++) {
+        putText(ui,
+            options[i], Point(x, y + ((int)(i) * 20)),
+            FONT_HERSHEY_SIMPLEX, fontSize, Scalar(255, 255, 255), fontWidth);
+    }
+}
+
 int main () {
 
     string imagePath = "../images/objects.png";
@@ -114,7 +149,15 @@ int main () {
     setMouseCallback("Cutout tool", mouseCallback, NULL);
 
     while(true){
-        imshow("Cutout tool", image);
+
+        // combined image to show both menu and image
+        Mat ui;
+        copyMakeBorder(image, ui, 0, 0, sideW, 0,
+            BORDER_CONSTANT, Scalar(32,32,32));
+
+        showOptions(ui);
+        
+        imshow("Cutout tool", ui);
 
         char key = waitKey(20);
 
