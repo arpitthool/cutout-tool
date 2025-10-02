@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(FaceDetection)
+project(CutoutTool)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 11)
