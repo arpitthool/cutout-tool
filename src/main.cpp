@@ -10,18 +10,36 @@ using namespace std;
 bool selectRectangleMode = false, firstClickDone = false;
 Point firstClick, secondClick;      // Variables to store the coordinates of the two clicks
 Mat ogImage, image;  
-int sideW = 200;                    // side menu width
 Rect selectedRect;                  // Rectangle selected by user
+
+void showMenu( string windowName) {
+    // show the menu
+    // we use Mat::zeros to create a black image, with height and width as input
+    // CV_8UC3 means 3 channels (RGB) and 8 bits per channel
+    // we use CV_8UC3 because we want to display the text in color
+    Mat menuImage = Mat::zeros(300, 300, CV_8UC3);
+    vector<string> menuItems = {
+        "MENU",
+        "'q' - quit",
+        "'r' - make rectangle",
+        "(make two clicks",
+        "to signify the ",
+        "top left and the",
+        "bottom right corners)",
+        "'g' - generate cutout"
+    };
+
+    int menuItemsSize = menuItems.size();
+
+    for (int i = 0; i < menuItemsSize; i++) {
+        putText(menuImage, menuItems[i], Point(10, 30 + i * 30), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 255, 0), 1);
+    }
+    imshow(windowName, menuImage);
+}
 
 // Mouse callback function for rectangle selection - this function is called whenever the mouse is clicked
 // Where x and y are the coordinates of the mouse click and event is the type of event that occurred
 void mouseCallback(int event, int x, int y, int flags, void* userdata) {
-
-    // Ignore clicks in the side strip
-    if (x < sideW) return;
-
-    // Shift x to match original image coordinates
-    x -= sideW;
 
     // Check if the left mouse button was pressed down AND we're in rectangle selection mode
     if (event == EVENT_LBUTTONDOWN && selectRectangleMode) {
@@ -103,33 +121,6 @@ Mat createMask (Mat image, Rect selectedRect) {
     return mask;
 }
 
-// function to show the menu options
-void showOptions(Mat ui) {
-
-    double fontSize = 0.5;
-    int fontWidth = 1;
-    int x = 10, y = 40;
-
-    vector<string> options = {
-        "MENU",
-        "",
-        "'q' - quit",
-        "",
-        "'r' - make rectangle",
-        "(make two clicks",
-        "to signify the ",
-        "top left and the",
-        "bottom right corners)",
-        "",
-        "'g' - generate cutout"
-    };
-
-    for(size_t i = 0; i < options.size(); i++) {
-        putText(ui,
-            options[i], Point(x, y + ((int)(i) * 20)),
-            FONT_HERSHEY_SIMPLEX, fontSize, Scalar(255, 255, 255), fontWidth);
-    }
-}
 
 int main () {
 
@@ -144,20 +135,17 @@ int main () {
 
     // Create a window to display the image
     namedWindow("Cutout tool", WINDOW_AUTOSIZE);
+    string menuWindowName = "Menu";
+    namedWindow(menuWindowName, WINDOW_AUTOSIZE);
 
     // VIP : Tell the program to call our mouseCallback function whenever the mouse is clicked in this window
     setMouseCallback("Cutout tool", mouseCallback, NULL);
 
     while(true){
 
-        // combined image to show both menu and image
-        Mat ui;
-        copyMakeBorder(image, ui, 0, 0, sideW, 0,
-            BORDER_CONSTANT, Scalar(32,32,32));
-
-        showOptions(ui);
-        
-        imshow("Cutout tool", ui);
+        // Display the image without menu overlay
+        showMenu(menuWindowName);
+        imshow("Cutout tool", image);
 
         char key = waitKey(20);
 
